@@ -20,7 +20,9 @@ class OrderBook:
         self._volumeMap = volumeMap if volumeMap is not None else {}
         self._queueMap = queueMap if queueMap is not None else {}
 
-    def PlaceOrder(self, order: Order):
+    def PlaceOrder(self, order: Order) -> str:
+        order_output = ""
+
         # get which book the order is and its opposite
         if order.side == BuyOrSell.BUY:
             other_book = self._bestAsk
@@ -64,7 +66,7 @@ class OrderBook:
             self._volumeMap[(best_price, other_side)] -= trade_volume
 
             # print the transaction if any takes place
-            print(f"Made by {other_order.client}, taken by {order.client}, {trade_volume} shares at {trade_price}")
+            order_output = f"Made by {other_order.client}, taken by {order.client}, {trade_volume} shares at {trade_price}"
             # we use other_order.price bc
             # if we offer to buy a stock for 52 dollars but there's a share up for sell for 50 dollars we buy at 50 and report 50 as the trade price
             # if we offer to sell a stock for 50 dollars but someone wants to buy for 52 we sell it at 52 and report 52 as the trade price
@@ -74,6 +76,8 @@ class OrderBook:
 
         if order.volume > 0: # if we still have volume left after
             self.addOrderToBook(order)
+
+        return order_output
 
 
     def addOrderToBook(self, order:Order):

@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from BuyOrSellEnum import BuyOrSell
 
 class Order:
@@ -9,7 +9,7 @@ class Order:
     _volume: int
     _client: str
 
-    def __init__(self, orderID: int, timestamp: date, side: BuyOrSell, price: float, volume: int, client: str):
+    def __init__(self, orderID: int, timestamp: datetime, side: BuyOrSell, price: float, volume: int, client: str):
         self._orderID = orderID
         self._timestamp = timestamp
         self._side = side
@@ -37,7 +37,6 @@ class Order:
     @property
     def volume(self):
         return self._volume
-
     @volume.setter
     def volume(self, volume):
         self._volume = volume
@@ -45,3 +44,7 @@ class Order:
     @property
     def client(self):
         return self._client
+
+    # java to_string() function for python
+    def __str__(self):
+        return f"order_id: {self._orderID}, timestamp: {self._timestamp}, side: {self._side}, price: {self._price}, volume: {self._volume}, client: {self._client}"
