@@ -2,3 +2,4 @@
 .idea/
 .git/
 Test.py
+__pycache__/
