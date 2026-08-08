@@ -1,6 +1,7 @@
-from datetime import date, datetime
+from datetime import datetime
 import random
 import time
+from threading import Event
 
 from OrderBook import OrderBook
 from BuyOrSellEnum import BuyOrSell
@@ -11,11 +12,12 @@ order_id = 999
 
 name_list: list[str] = ['Techur', 'Tekur', 'Telur', 'Tefur', 'Tecur', 'Tequr', 'Tepur', 'Temur', 'Tehur', 'Tegur', 'Tedur', 'Tesur', 'Tewur', 'Tenur', 'Tebur']
 
-def simulate( ):
-    global mid_price, order_id # globalize this price
-    ob = OrderBook()
+def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed: float | None = None, aggressiveness: float | None = None):
+    global mid_price, order_id # globalize mid price and order_ids
 
-    while True:
+    while not stop_event.is_set(): # since stop_event is false by default we have to get the opposite to run the simulation and when it's true we end it
+        resume_event.wait() # if this is true the simulation will happen, if it isn't true then it'll just wait until it's true -> making a pause/resume feature
+
         # increment order_id by one to have a different id for each order
         order_id += 1
         # get the mid price and slightly change it to simulate market growth
@@ -39,17 +41,28 @@ def simulate( ):
         )
 
         # place order and print the output
-        order_output = ob.PlaceOrder(o)
+        order_output = orderbook.PlaceOrder(o)
 
         if not order_output == "":
-            print(order_output)
+            # get sorted versions because heaps are not sorted in a list
+            sorted_best_bid = sorted(orderbook._bestBid)
+            sorted_best_ask = sorted(orderbook._bestAsk)
 
-        # sleep for 500 miliseconds as to not overload the program
-        time.sleep(.2)
+            print(order_output)
+            print("best bid")
+            for item in sorted_best_bid:
+                print(-item)
+            print("best ask")
+            for item in sorted_best_ask:
+                print(item)
+
+        # wait for a fraction of a second as to not overload the program
+        time.sleep(.8)
 
 
 def main():
-    simulate()
+    # simulate(OrderBook(), Event())
+    pass
 
 if __name__ == "__main__":
-    simulate()
+    main()

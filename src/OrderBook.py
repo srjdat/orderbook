@@ -66,7 +66,7 @@ class OrderBook:
             self._volumeMap[(best_price, other_side)] -= trade_volume
 
             # print the transaction if any takes place
-            order_output = f"Made by {other_order.client}, taken by {order.client}, {trade_volume} shares at {trade_price}"
+            order_output = f"Made by {other_order.client}, taken by {order.client}, {trade_volume} shares at {round(trade_price, 3)}"
             # we use other_order.price bc
             # if we offer to buy a stock for 52 dollars but there's a share up for sell for 50 dollars we buy at 50 and report 50 as the trade price
             # if we offer to sell a stock for 50 dollars but someone wants to buy for 52 we sell it at 52 and report 52 as the trade price
