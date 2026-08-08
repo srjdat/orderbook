@@ -1,8 +1,11 @@
+import plotly.graph_objects as go
+import Simulation # won't trigger the entire file since we have the if __name__ == "__main__": block at the end
+
 from dash import Dash, Input, Output, State, callback, ctx, dcc, html
 from OrderBook import OrderBook
 from Simulation import simulate
 from threading import Thread, Event
-
+from BuyOrSellEnum import BuyOrSell
 
 # make the orderbook and create the thread but don't start it
 ob = OrderBook()
@@ -21,7 +24,7 @@ app.layout = [
                 children=[ # list of bid and ask prices
                     html.Div(
                         children=[
-                            html.Div(children='Best Bid/Ask', style={'margin-top':'5px'}), # title
+                            html.Div(children='Market Depth', style={'margin-top':'5px'}), # title
                             html.Div( # chart of the lists
                                 children=[
                                     dcc.Textarea(id='best-ask', style={'margin-left':'2px', 'margin-right':'2px', 'width':'90%', 'height':'40%'})
@@ -39,8 +42,9 @@ app.layout = [
                     }),
                     html.Div( # graph of the market depth
                         children=[
-                            html.Div('Depth Chart'),
-                            dcc.Graph(id='depth-chart', style={'height':'90%'})
+                            html.Div('Cumulative Depth', style={'margin-top':'5px'}),
+                            dcc.Interval(id='interval-tick', interval=200, n_intervals=0), # refresh interval is the same speed as the simulation speed
+                            dcc.Graph(id='depth-chart', style={'height':'90%'}),
                         ],
                         style={
                             'textAlign':'center',
@@ -150,12 +154,67 @@ def run_simulation(start_clicks: int, stop_clicks: int):
         stop_event.set() # stop event = true -> while loop fails; simulation stops
         return ('Start', 0)
 
-
     # nclicks = 0: nothing
     # nclicks = 1: sim started
     # nclicks = 2: sim paused
     # nclicks = 3: sim resumed
 
+@callback(
+    Output('depth-chart', 'figure'),
+    Input('interval-tick', 'n_intervals'),
+)
+def refresh_display(n):
+    global ob
+    return build_cumulative_depth_chart(ob)
+
+def build_cumulative_depth_chart(ob: OrderBook):
+
+    # get bid and ask lists
+    bid_list = sorted([-item for item in ob._bestBid], reverse=True) # reverse because this is going on the left
+    # bid_list = [-item for item in bid_list] # negate all the values
+    ask_list = sorted(ob._bestAsk)
+
+    # get cumulative depth
+    bid_cumulative_list = []
+    curr_vol = 0
+    for price in bid_list: # bid cumulative depth
+        curr_vol += ob._volumeMap[(price, BuyOrSell.BUY)] # we're only getting the bid which are the buys
+        bid_cumulative_list.append(curr_vol)
+    curr_vol = 0 # set it back to 0
+    ask_cumulative_list = []
+    for price in ask_list: # ask cumulative depth
+        curr_vol += ob._volumeMap[(price, BuyOrSell.SELL)] # we're getting ask which means the sell
+        ask_cumulative_list.append(curr_vol)
+
+    # build final figure
+    figure = go.Figure()
+    figure.add_trace(
+        go.Scatter(
+            x=bid_list,
+            y=bid_cumulative_list,
+            fill='tozeroy',
+            line_shape='hv',
+            line_color='green',
+            name='Bids'
+        ),
+    )
+    figure.add_trace(
+        go.Scatter(
+            x=ask_list,
+            y=ask_cumulative_list,
+            fill='tozeroy',
+            line_shape='hv',
+            line_color='red',
+            name='Asks'
+        ),
+    )
+    figure.add_vline(
+        x=Simulation.mid_price,
+        line_width=2,
+        line_dash="dash",
+    )
+
+    return figure
 
 
 if __name__ == "__main__":

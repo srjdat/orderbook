@@ -59,7 +59,7 @@ class OrderBook:
                 continue # continue on
 
 
-            other_order: Order = queue[0] # top item from the other side # type: ignore
+            other_order: Order = queue[0] # top item from the other side
             trade_price, trade_volume = other_order.price, min(order.volume, other_order.volume) # trade price is what the user wants, volume is what we can trade which is either how much the user puts in or how much this price has
             other_order.volume -= trade_volume # decrement the volume in the first order of the other book
             order.volume -= trade_volume # decrement the volume in the order
