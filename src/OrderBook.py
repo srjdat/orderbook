@@ -46,7 +46,7 @@ class OrderBook:
                 if best_price > order.price:
                     break
             else:
-                best_price = -other_book[0] # negated back to positive
+                best_price = -(other_book[0]) # negated back to positive
                 # other_book in this case is bid (they're buying)
                 # break the loop if the price that they want to buy for is less than the price we want to sell for
                 if best_price < order.price:
@@ -58,7 +58,6 @@ class OrderBook:
                 heapq.heappop(other_book) # we pop the smallest from the other book
                 continue # continue on
 
-
             other_order: Order = queue[0] # top item from the other side
             trade_price, trade_volume = other_order.price, min(order.volume, other_order.volume) # trade price is what the user wants, volume is what we can trade which is either how much the user puts in or how much this price has
             other_order.volume -= trade_volume # decrement the volume in the first order of the other book
@@ -66,7 +65,7 @@ class OrderBook:
             self._volumeMap[(best_price, other_side)] -= trade_volume
 
             # print the transaction if any takes place
-            order_output = f"Made by {other_order.client}, taken by {order.client}, {trade_volume} shares at {round(trade_price, 3)}"
+            order_output = f"Trade #{other_order.order_id} made by {other_order.client}, taken by {order.client}, {trade_volume} shares at {round(trade_price, 3)}"
             # we use other_order.price bc
             # if we offer to buy a stock for 52 dollars but there's a share up for sell for 50 dollars we buy at 50 and report 50 as the trade price
             # if we offer to sell a stock for 50 dollars but someone wants to buy for 52 we sell it at 52 and report 52 as the trade price
@@ -110,13 +109,6 @@ class OrderBook:
             self._volumeMap[(order.price, order.side)] -= order.volume
 
             if len(price_queue) == 0: # check if price_queue for this price is empty
-                if order.side == BuyOrSell.BUY:
-                    same_book = self._bestBid
-                    same_book.remove(-order.price) # since we're negating it
-                else:
-                    same_book = self._bestAsk
-                    same_book.remove(order.price) # normal removal
-
                 self._queueMap.pop((order.price, order.side)) # since this price queue doesn't exist, we can remove it from the queue map
                 self._volumeMap.pop((order.price, order.side)) # if price_queue is empty then we remove from volume
 
