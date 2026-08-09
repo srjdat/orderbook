@@ -14,7 +14,8 @@ name_list: list[str] = ['Techur', 'Tekur', 'Telur', 'Tefur', 'Tecur', 'Tequr', '
 order_output_list: list[str] = []
 
 def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed: float | None = None, aggressiveness: float | None = None):
-    global mid_price, order_id # globalize mid price and order_ids
+    global mid_price, order_id, order_output_list # globalize mid price and order_ids
+    order_output_list = []
 
     while not stop_event.is_set(): # since stop_event is false by default we have to get the opposite to run the simulation and when it's true we end it
         resume_event.wait() # if this is true the simulation will happen, if it isn't true then it'll just wait until it's true -> making a pause/resume feature
@@ -30,7 +31,7 @@ def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed
         volume = round(random.lognormvariate(mu=2.3, sigma=.5))
 
         # get a random number between 0-1.3 and add it subtract it based on if the order is a buy or sell
-        offset_amount = random.uniform(0, 1.3)
+        offset_amount = random.uniform(0, .9)
         # make aggressive probability
         aggressive = random.randint(1,10) < 3 # aroudn 20 percent chance
 
@@ -54,28 +55,35 @@ def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed
         # place order and print the output
         order_output = orderbook.PlaceOrder(o)
 
+        if not order_output == "":
+            order_output_list.append(order_output)
+
+        # print(order_output_list)
+
+
         # if not order_output == "":
         #     # get sorted versions because heaps are not sorted in a list
-        #     sorted_best_bid = sorted(orderbook._bestBid)
+        #     sorted_best_bid = sorted([-item for item in orderbook._bestBid])
         #     sorted_best_ask = sorted(orderbook._bestAsk)
 
         #     print(order_output)
-        #     order_output_list.append(order_output)
-        #     print("best bid")
-        #     for item in sorted_best_bid:
-        #         print(-item)
-        #     print("best ask")
-        #     for item in sorted_best_ask:
-        #         print(item)
+        #     if sorted_best_bid:
+        #         print(f"best bid first element: {sorted_best_bid[0]}")
+        #         print(f"best bid last element: {sorted_best_bid[-1]}")
+        #     if sorted_best_ask:
+        #         print(f"best ask first element: {sorted_best_ask[0]}")
+
 
         # wait for a fraction of a second as to not overload the program
         time.sleep(.2)
 
+    # order_output_list = []
+
 
 def main():
-    # resume_event = Event()
-    # resume_event.set()
-    # simulate(OrderBook(), Event(), resume_event)
+    resume_event = Event()
+    resume_event.set()
+    simulate(OrderBook(), Event(), resume_event)
     pass
 
 if __name__ == "__main__":
