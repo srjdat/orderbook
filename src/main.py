@@ -43,6 +43,7 @@ app.layout = [
                     html.Div( # graph of the market depth
                         children=[
                             html.Div('Cumulative Depth', style={'margin-top':'5px'}),
+                            html.Div(children='', style={'margin-y':'5px'}, id='mid-price'),
                             dcc.Interval(id='interval-tick', interval=200, n_intervals=0), # refresh interval is the same speed as the simulation speed
                             dcc.Graph(id='depth-chart', style={'height':'90%'}),
                         ],
@@ -55,22 +56,15 @@ app.layout = [
                     html.Div( # right hand side, will include the transactions and ability to manually enter bids and asks
                         children=[
                             html.Div(
-                                children='Transaction History',
+                                children=[
+                                    html.Div('Transaction History'),
+                                    dcc.Textarea(id='transactions', style={'margin-left':'2px', 'margin-right':'2px', 'width':'95%', 'height':'95%'}, value="")
+                                ],
                                 style={
                                     'textAlign':'center',
                                     'border':'2px solid black',
                                     'borderRadius':'5px',
-                                    'height':'33%',
-                                }
-                            ),
-                            html.Div(
-                                children='Manual Order',
-                                style={
-                                    'textAlign':'center',
-                                    'border':'2px solid black',
-                                    'borderRadius':'5px',
-                                    'height':'33%',
-                                    'margin-top':'5px'
+                                    'height':'67.5%',
                                 }
                             ),
                             html.Div( # simulation start, stop, speed, aggression, etc.
@@ -123,20 +117,23 @@ app.layout = [
 @callback(
     Output('start-button', 'children'),
     Output('start-button', 'n_clicks'),
+    Output('transactions', 'value', allow_duplicate=True),
     Input('start-button', 'n_clicks'),
-    Input('stop-button', 'n_clicks')
+    Input('stop-button', 'n_clicks'),
+    State('transactions', 'value'),
+    prevent_initial_call = True
 )
-def run_simulation(start_clicks: int, stop_clicks: int):
+def run_simulation(start_clicks: int, stop_clicks: int,  transaction_str: str):
     global ob, thread # globalize these variables cause we're reinstantiating them
 
     if ctx.triggered_id == "start-button":
         if start_clicks > 1:
             if start_clicks % 2 == 0: # simulation will be paused
                 resume_event.clear() # make it false so the while loop runs but it waits until we make this true meaning we resume the simulation
-                return ('Resume', start_clicks)
+                return ('Resume', start_clicks, transaction_str)
             else: # simulation will be resumed
                 resume_event.set() # make it true -> resume the program
-                return ('Pause', start_clicks)
+                return ('Pause', start_clicks, transaction_str)
         elif start_clicks == 1: # simulation will be started
             # start the simulation by creating a new thread and start that every time
             ob = OrderBook() # create a new instance of orderbook since we're restarting simulation from the start
@@ -145,14 +142,14 @@ def run_simulation(start_clicks: int, stop_clicks: int):
             # have the set the flag first otherwise in the thread it will start off as false
             resume_event.set() # resume flag is true -> code will run
             thread.start() # start the simulation
-            return ('Pause', start_clicks)
+            return ('Pause', start_clicks, "")
         elif start_clicks == 0: # base level
             # this will only ever be hit once at the start of the program
-            return ('Start', start_clicks)
+            return ('Start', start_clicks, "")
     elif ctx.triggered_id == "stop-button": # stop the simulation
         resume_event.set() # resume previous thread from suspended state if it had been so we can run that out
         stop_event.set() # stop event = true -> while loop fails; simulation stops
-        return ('Start', 0)
+        return ('Start', 0, "")
 
     # nclicks = 0: nothing
     # nclicks = 1: sim started
@@ -161,29 +158,40 @@ def run_simulation(start_clicks: int, stop_clicks: int):
 
 @callback(
     Output('depth-chart', 'figure'),
+    Output('mid-price', 'children'),
+    Output('transactions', 'value'),
     Input('interval-tick', 'n_intervals'),
 )
 def refresh_display(n):
     global ob
-    return build_cumulative_depth_chart(ob)
+    length = min(40, len(Simulation.order_output_list))
+    order_output_str = ""
+    lines = [Simulation.order_output_list[i] for i in range(-length, 0, 1)] # get list of lines
+    order_output_str = "\n".join(lines) # join the lines with a new line between them
+    return (build_cumulative_depth_chart(ob), f"mid {round(Simulation.mid_price, 2)}", order_output_str)
 
 def build_cumulative_depth_chart(ob: OrderBook):
 
     # get bid and ask lists
     bid_list = sorted([-item for item in ob._bestBid], reverse=True) # reverse because this is going on the left
-    # bid_list = [-item for item in bid_list] # negate all the values
     ask_list = sorted(ob._bestAsk)
 
     # get cumulative depth
     bid_cumulative_list = []
     curr_vol = 0
     for price in bid_list: # bid cumulative depth
-        curr_vol += ob._volumeMap[(price, BuyOrSell.BUY)] # we're only getting the bid which are the buys
+        volume = ob._volumeMap.get((price, BuyOrSell.BUY))
+        if volume is None:
+            continue  # no volume for this price
+        curr_vol += volume
         bid_cumulative_list.append(curr_vol)
     curr_vol = 0 # set it back to 0
     ask_cumulative_list = []
     for price in ask_list: # ask cumulative depth
-        curr_vol += ob._volumeMap[(price, BuyOrSell.SELL)] # we're getting ask which means the sell
+        volume = ob._volumeMap.get((price, BuyOrSell.SELL))
+        if volume is None:
+            continue  # no volume for this price
+        curr_vol += volume
         ask_cumulative_list.append(curr_vol)
 
     # build final figure
@@ -213,6 +221,27 @@ def build_cumulative_depth_chart(ob: OrderBook):
         line_width=2,
         line_dash="dash",
     )
+
+    # keep mid_price at the middle of the graph
+
+    # get cheapest bid price
+    bid_window, ask_window = .5, .5
+    if bid_list:
+        for price in reversed(bid_list): # have to reverse it because it's in descending order right now and we want the smallest value here
+            volume = ob._volumeMap.get((price, BuyOrSell.BUY)) # check if it's stale price
+            if volume is not None:
+                bid_window = max(.5, Simulation.mid_price - price) # last one is the smallest
+                break
+    # get largest ask price
+    if ask_list:
+        for price in reversed(ask_list): # have to reverse it because it is in ascending order and we want the largest value here
+            volume = ob._volumeMap.get((price, BuyOrSell.SELL)) # check if it's stale price
+            if volume is not None:
+                ask_window = max(.5, price - Simulation.mid_price) # last one is the smallest
+                break
+
+    window = max(ask_window, bid_window) # get max of the two to keep mid price at the middle and not moving around
+    figure.update_xaxes(range=[Simulation.mid_price - window, Simulation.mid_price + window])
 
     return figure
 
