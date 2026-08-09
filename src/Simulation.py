@@ -58,22 +58,6 @@ def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed
         if not order_output == "":
             order_output_list.append(order_output)
 
-        # print(order_output_list)
-
-
-        # if not order_output == "":
-        #     # get sorted versions because heaps are not sorted in a list
-        #     sorted_best_bid = sorted([-item for item in orderbook._bestBid])
-        #     sorted_best_ask = sorted(orderbook._bestAsk)
-
-        #     print(order_output)
-        #     if sorted_best_bid:
-        #         print(f"best bid first element: {sorted_best_bid[0]}")
-        #         print(f"best bid last element: {sorted_best_bid[-1]}")
-        #     if sorted_best_ask:
-        #         print(f"best ask first element: {sorted_best_ask[0]}")
-
-
         # wait for a fraction of a second as to not overload the program
         time.sleep(.2)
 
