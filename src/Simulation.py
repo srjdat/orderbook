@@ -8,7 +8,7 @@ from BuyOrSellEnum import BuyOrSell
 from Order import Order
 
 mid_price: float = 100 # base mid price
-order_id = 999
+order_id = 0
 
 name_list: list[str] = ['Techur', 'Tekur', 'Telur', 'Tefur', 'Tecur', 'Tequr', 'Tepur', 'Temur', 'Tehur', 'Tegur', 'Tedur', 'Tesur', 'Tewur', 'Tenur', 'Tebur']
 order_output_list: list[str] = []
@@ -23,7 +23,7 @@ def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed
         # increment order_id by one to have a different id for each order
         order_id += 1
         # get the mid price and slightly change it to simulate market growth
-        mid_price += random.gauss(0, .01)
+        mid_price += random.gauss(0, .1)
         # randomly get whether buy or sell
         side: BuyOrSell = BuyOrSell.BUY if random.randint(0, 1) == 0 else BuyOrSell.SELL
         # average range is 5-20 with mean being 11.302 with some outliers - mu: 2.3 sigma: .5
@@ -33,7 +33,7 @@ def simulate(orderbook: OrderBook, stop_event: Event, resume_event: Event, speed
         # get a random number between 0-1.3 and add it subtract it based on if the order is a buy or sell
         offset_amount = random.uniform(0, .9)
         # make aggressive probability
-        aggressive = random.randint(1,10) < 3 # aroudn 20 percent chance
+        aggressive = random.randint(1,10) < 5 # aroudn 40 percent chance for an aggressive order (can change this around manually)
 
         if aggressive and orderbook._bestAsk and side == BuyOrSell.BUY: # order is a buy order so we want to match best ask price -> lowest price someone is willing to sell
             price = orderbook._bestAsk[0] # best price from orderbook
