@@ -1,6 +1,7 @@
-![demo](media/demo.gif)
-### Demo
 ## Orderbook
+
+### Demo
+![demo](media/demo.gif)
 
 Limit order book with price-time priority, heap-based price levels, and FIFO order queues, supporting partial fills and order cancellation. 
 
