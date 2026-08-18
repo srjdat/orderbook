@@ -1,3 +1,5 @@
+![demo](media/demo.gif)
+### Demo
 ## Orderbook
 
 Limit order book with price-time priority, heap-based price levels, and FIFO order queues, supporting partial fills and order cancellation. 
@@ -20,8 +22,6 @@ The core Orderbook has two sides (buy/bid and sell/ask) which are both represent
 
 **Frontend** - Dash dashboard with a table with 10 best bids/asks, a live graph showing cumulative market depth, and a transaction history for the 50 most recent transactions. 
 
-### Demo
-![demo](media/demo.gif)
 
 ### How to run
 1. Create a virtual environment through `python3 -m venv venv`
