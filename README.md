@@ -18,7 +18,7 @@ The core Orderbook has two sides (buy/bid and sell/ask) which are both represent
 **Lazy Deletion** - Instead of immediately removing the price from _bestBid or _bestAsk using list.remove(), the simulation pops it during the matching loop. On the contrary the price is removed from volume and queue maps immediately. When checking for stale prices in the frontend volume map is used. 
 
 
-**Market Simulation** - A background thread generates synthetic order flow around an underlying price variable which is mutated using Gaussian distribution, with the ability to configure the probability to have "aggressive" orders. Aggressive orders guarantee a cross which is to prevent stale, unmatched liquidity from building up as the reference price drifts. 
+**Market Simulation** - A background thread generates synthetic order flow around an underlying price variable which is mutated using Gaussian distribution, with the ability to configure the probability to have "aggressive" orders. Aggressive orders guarantee a cross which is to prevent stale, unmatched liquidity from building up as the reference price drifts. Volumes are generated through a lognormal distribution to have mean of 11.302 with outliers at a low rate. 
 
 
 **Frontend** - Dash dashboard with a table with 10 best bids/asks, a live graph showing cumulative market depth, and a transaction history for the 50 most recent transactions. 
